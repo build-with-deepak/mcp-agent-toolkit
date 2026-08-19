@@ -1,0 +1,91 @@
+<div class="agent">
+  <form class="ask-form" (submit)="$event.preventDefault(); ask()">
+    <textarea
+      class="question-input"
+      rows="3"
+      maxlength="1000"
+      placeholder="Ask something that needs the database, the weather and some math…"
+      [(ngModel)]="question"
+      name="question"
+      [disabled]="isRunning()"
+    ></textarea>
+    <button class="ask-button" type="submit" [disabled]="isRunning() || !question().trim()">
+      {{ isRunning() ? 'Working…' : 'Ask the agent' }}
+    </button>
+  </form>
+
+  <div class="suggestions">
+    @for (suggestion of suggestions; track suggestion) {
+      <button class="suggestion" type="button" (click)="useSuggestion(suggestion)" [disabled]="isRunning()">
+        {{ suggestion }}
+      </button>
+    }
+  </div>
+
+  @if (tools().length > 0) {
+    <details class="tools-panel">
+      <summary>{{ tools().length }} tools available over MCP</summary>
+      <ul>
+        @for (tool of tools(); track tool.name) {
+          <li><code>{{ tool.name }}</code> — {{ tool.description }}</li>
+        }
+      </ul>
+    </details>
+  }
+
+  @if (error()) {
+    <p class="error-banner">{{ error() }}</p>
+  }
+
+  @if (timeline().length > 0) {
+    <div class="panel">
+      <p class="panel-title">Live run</p>
+      <ol class="timeline">
+        @for (entry of timeline(); track $index) {
+          @switch (entry.kind) {
+            @case ('step') {
+              <li class="entry entry-step">Reasoning step {{ entry.step }}</li>
+            }
+            @case ('tool_call') {
+              <li class="entry entry-call">
+                <span class="entry-badge badge-call">tool call</span>
+                <code>{{ entry.name }}</code>
+                <pre class="entry-args">{{ entry.args }}</pre>
+              </li>
+            }
+            @case ('tool_result') {
+              <li class="entry" [class.entry-error]="entry.isError">
+                <span class="entry-badge" [class.badge-result]="!entry.isError" [class.badge-failed]="entry.isError">
+                  {{ entry.isError ? 'tool error' : 'result' }}
+                </span>
+                <code>{{ entry.name }}</code>
+                <span class="entry-ms num">{{ entry.ms }}ms</span>
+                <pre class="entry-result">{{ entry.result }}</pre>
+                @if (entry.isError) {
+                  <p class="recovery-note">The error goes back to the model, which can fix its input and retry — watch the next step.</p>
+                }
+              </li>
+            }
+          }
+        }
+        @if (isRunning()) {
+          <li class="entry entry-waiting">The model is thinking…</li>
+        }
+      </ol>
+    </div>
+  }
+
+  @if (answer()) {
+    <div class="panel">
+      <p class="panel-title">Answer</p>
+      <p class="answer-text">{{ answer() }}</p>
+      @if (summary(); as s) {
+        <p class="summary-line num">
+          {{ s.steps }} reasoning step{{ s.steps === 1 ? '' : 's' }} ·
+          {{ s.toolCalls }} tool call{{ s.toolCalls === 1 ? '' : 's' }} ·
+          {{ s.totalMs }}ms total
+        </p>
+      }
+    </div>
+  }
+</div>

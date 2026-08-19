@@ -1,0 +1,17 @@
+<div class="shell">
+  @if (auth.isAuthenticated()) {
+    <header class="topbar">
+      <div class="topbar-inner">
+        <p class="brand">MCP Agent Toolkit</p>
+        <div class="session">
+          <span class="session-badge">Demo session</span>
+          <button class="logout" type="button" (click)="logout()">Sign out</button>
+        </div>
+      </div>
+    </header>
+  }
+
+  <main class="content" [class.content-authed]="auth.isAuthenticated()">
+    <router-outlet />
+  </main>
+</div>

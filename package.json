@@ -1,0 +1,15 @@
+{
+  "name": "mcp-agent-toolkit",
+  "private": true,
+  "description": "Model Context Protocol agent with real tool access — read-only PostgreSQL, weather, calculator — public demo",
+  "scripts": {
+    "dev:api": "pnpm --filter api start:dev",
+    "dev:web": "pnpm --filter web start",
+    "build:api": "pnpm --filter api build",
+    "build:web": "pnpm --filter web build",
+    "test:api": "pnpm --filter api test",
+    "test:web": "pnpm --filter web test",
+    "lint:api": "pnpm --filter api lint",
+    "db:reset": "node scripts/db-reset.mjs"
+  }
+}
