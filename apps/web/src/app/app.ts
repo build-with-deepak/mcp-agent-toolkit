@@ -1,10 +1,11 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
+import { BrandFooterComponent } from './core/brand-footer.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, BrandFooterComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
