@@ -13,7 +13,7 @@
 }
 
 .topbar-inner {
-  max-width: 60rem;
+  max-width: 64rem;
   margin: 0 auto;
   padding: 0.75rem 1.5rem;
   display: flex;
@@ -23,10 +23,41 @@
   gap: 0.75rem 1.5rem;
 }
 
-/* The single most important link on the page: this is what turns a
-   visitor impressed by the demo into someone who can reach the person
-   who built it. Text, not a logo — a name reads faster than a wordmark. */
+/*
+ * Logo chip + name/title, identical markup and sizing to the other two demo
+ * apps (rag-privacy-first, llm-multi-model-router) and to build-with-deepak.com
+ * itself — the brand mark this app's visitors have just come from or are
+ * about to land on, so it needs to read as the same identity, not a
+ * differently-styled cousin of it. The light backing chip exists because
+ * `build-with-light.png` is drawn for a light background and these apps are
+ * dark-themed with no light-mode toggle.
+ */
 .identity {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.topbar-logo {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+
+  img {
+    height: 1.5rem;
+    width: auto;
+    display: block;
+  }
+
+  &:hover {
+    border-color: var(--accent);
+  }
+}
+
+.identity-text {
   display: flex;
   flex-direction: column;
   text-decoration: none;

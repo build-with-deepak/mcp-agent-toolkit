@@ -1,16 +1,27 @@
 <div class="shell">
   <header class="topbar">
     <div class="topbar-inner">
-      <a
-        class="identity"
-        href="https://build-with-deepak.com"
-        target="_blank"
-        rel="noopener"
-        aria-label="build-with-deepak.com — Deepak Kumar Jha"
-      >
-        <span class="identity-name">Deepak Kumar Jha</span>
-        <span class="identity-title">Technical Lead · Senior Node.js Engineer</span>
-      </a>
+      <div class="identity">
+        <a
+          class="topbar-logo"
+          href="https://build-with-deepak.com"
+          target="_blank"
+          rel="noopener"
+          aria-label="build-with-deepak.com home"
+        >
+          <img src="/build-with-light.png" alt="build-with-deepak.com" />
+        </a>
+        <a
+          class="identity-text"
+          href="https://build-with-deepak.com"
+          target="_blank"
+          rel="noopener"
+          aria-label="build-with-deepak.com — Deepak Kumar Jha"
+        >
+          <span class="identity-name">Deepak Kumar Jha</span>
+          <span class="identity-title">Technical Lead · Senior Node.js Engineer</span>
+        </a>
+      </div>
 
       <div class="topbar-actions">
         @if (auth.isAuthenticated()) {
@@ -23,6 +34,14 @@
           rel="noopener noreferrer"
         >
           Download CV
+        </a>
+        <a
+          class="profile-link"
+          href="https://www.linkedin.com/in/build-with-deepak/"
+          target="_blank"
+          rel="noopener me"
+        >
+          LinkedIn
         </a>
         <a
           class="profile-link"
