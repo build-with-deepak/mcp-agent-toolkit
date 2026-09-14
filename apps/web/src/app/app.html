@@ -1,26 +1,45 @@
 <div class="shell">
-  @if (auth.isAuthenticated()) {
-    <header class="topbar">
-      <div class="topbar-inner">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a
+        class="identity"
+        href="https://build-with-deepak.com"
+        target="_blank"
+        rel="noopener"
+        aria-label="build-with-deepak.com — Deepak Kumar Jha"
+      >
+        <span class="identity-name">Deepak Kumar Jha</span>
+        <span class="identity-title">Technical Lead · Senior Node.js Engineer</span>
+      </a>
+
+      <div class="topbar-actions">
+        @if (auth.isAuthenticated()) {
+          <span class="session-badge">Demo session</span>
+        }
         <a
-          class="topbar-logo"
+          class="cv-button"
+          href="https://build-with-deepak.com/Deepak_Kumar_Jha_Technical_Lead.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Download CV
+        </a>
+        <a
+          class="profile-link"
           href="https://build-with-deepak.com"
           target="_blank"
           rel="noopener"
-          aria-label="build-with-deepak.com home"
         >
-          <img src="/build-with-light.png" alt="build-with-deepak.com" />
+          Full Profile →
         </a>
-        <p class="brand">MCP Agent Toolkit</p>
-        <div class="session">
-          <span class="session-badge">Demo session</span>
+        @if (auth.isAuthenticated()) {
           <button class="logout" type="button" (click)="logout()">Sign out</button>
-        </div>
+        }
       </div>
-    </header>
-  }
+    </div>
+  </header>
 
-  <main class="content" [class.content-authed]="auth.isAuthenticated()">
+  <main class="content">
     <router-outlet />
   </main>
 

@@ -8,16 +8,42 @@ export interface ToolInfo {
   description: string;
 }
 
-/** One entry in the live timeline the visitor watches. */
+/**
+ * One entry in the live timeline the visitor watches. A 'tool' entry is
+ * created the instant the call happens (status 'running', no result yet)
+ * and is updated in place when its result arrives — so the trace shows the
+ * real gap between "the agent decided to call this" and "the tool answered",
+ * rather than only ever showing calls after the fact.
+ */
 export type TimelineEntry =
   | { kind: 'step'; step: number }
-  | { kind: 'tool_call'; name: string; args: string }
-  | { kind: 'tool_result'; name: string; result: string; isError: boolean; ms: number };
+  | {
+      kind: 'tool';
+      name: string;
+      args: string;
+      status: 'running' | 'ok' | 'error';
+      result: string | null;
+      ms: number | null;
+    };
 
+/** Emoji badge per tool — a fast visual anchor in a trace with three tools. */
+export const TOOL_ICONS: Partial<Record<string, string>> = {
+  query_database: '🗄️',
+  get_weather: '⛅',
+  calculate: '🧮',
+};
+
+/**
+ * Three guided prompts, not four — one per tool combination that best
+ * shows what an agent actually is. At least one must chain two tools in a
+ * single request; here two of three do, because a single-tool call reads
+ * exactly like a plain chatbot and undersells the product. Table/column
+ * names match apps/api/db/schema.sql (customers.city, products.category,
+ * products.price_usd) so these always resolve against the real dataset.
+ */
 const SUGGESTIONS = [
   'What is the total revenue from customers in Dubai, and what is the weather there right now?',
-  'Which product category made the most money? Show the math.',
-  'Compare order counts between London and New York customers, and tell me which city is warmer today.',
+  'Which product category made the most money?',
   'What would the three most expensive products cost together with 5% tax?',
 ];
 
@@ -32,6 +58,7 @@ export class AgentComponent implements OnDestroy {
   private abortController: AbortController | null = null;
 
   readonly suggestions = SUGGESTIONS;
+  readonly toolIcons = TOOL_ICONS;
   readonly question = signal('');
   readonly isRunning = signal(false);
   readonly tools = signal<ToolInfo[]>([]);
@@ -40,8 +67,12 @@ export class AgentComponent implements OnDestroy {
   readonly summary = signal<{ steps: number; toolCalls: number; totalMs: number } | null>(null);
   readonly error = signal<string | null>(null);
 
+  /** Populates AND runs — a first-time visitor shouldn't have to type
+   * anything to see the trace happen. */
   useSuggestion(text: string): void {
+    if (this.isRunning()) return;
     this.question.set(text);
+    void this.ask();
   }
 
   async ask(): Promise<void> {
@@ -78,7 +109,14 @@ export class AgentComponent implements OnDestroy {
             const data = event.data as { name: string; arguments: unknown };
             this.timeline.update((list) => [
               ...list,
-              { kind: 'tool_call', name: data.name, args: JSON.stringify(data.arguments, null, 2) },
+              {
+                kind: 'tool',
+                name: data.name,
+                args: JSON.stringify(data.arguments, null, 2),
+                status: 'running',
+                result: null,
+                ms: null,
+              },
             ]);
             break;
           }
@@ -89,7 +127,24 @@ export class AgentComponent implements OnDestroy {
               isError: boolean;
               ms: number;
             };
-            this.timeline.update((list) => [...list, { kind: 'tool_result', ...data }]);
+            // Calls are awaited sequentially in the agent loop, so the
+            // pending call is always the last entry — update it in place
+            // rather than appending a second, disconnected entry.
+            this.timeline.update((list) => {
+              const lastIndex = list.length - 1;
+              const last = list[lastIndex];
+              if (!last || last.kind !== 'tool' || last.status !== 'running') {
+                return list;
+              }
+              const next = [...list];
+              next[lastIndex] = {
+                ...last,
+                status: data.isError ? 'error' : 'ok',
+                result: data.result,
+                ms: data.ms,
+              };
+              return next;
+            });
             break;
           }
           case 'answer':

@@ -6,6 +6,33 @@
   margin: 0 auto;
 }
 
+/* "What this demonstrates" — the first thing a recruiter reads, before the
+   input box. Kept quiet (border, not a loud fill) so the trace panel below
+   still wins the page once a run starts. */
+.intro-panel {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+}
+
+.intro-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.intro-text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
 .ask-form {
   display: flex;
   flex-direction: column;
@@ -77,6 +104,25 @@
   }
 }
 
+.trust-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.trust-note {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.trust-icon {
+  flex-shrink: 0;
+}
+
 .tools-panel {
   font-size: 0.82rem;
   color: var(--text-muted);
@@ -128,24 +174,33 @@
   margin: 0 0 0.9rem;
 }
 
+/* The trace panel is the whole point of this product — it gets the
+   strongest visual treatment on the page: an accent border, more padding,
+   a shadow that lifts it off the surface behind it. */
+.trace-panel {
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-bg), 0 12px 32px -16px rgba(0, 0, 0, 0.5);
+  padding: 1.5rem;
+}
+
+.trace-panel .panel-title {
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+
 .timeline {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .entry {
   border-left: 2px solid var(--border);
   padding-left: 0.9rem;
   font-size: 0.85rem;
-
-  code {
-    color: var(--text);
-    font-weight: 600;
-  }
 }
 
 .entry-step {
@@ -157,9 +212,42 @@
   border-left-color: var(--accent);
 }
 
+.entry-tool {
+  border-left-color: var(--border);
+  background: var(--surface-raised);
+  border-radius: 0 0.6rem 0.6rem 0;
+  padding: 0.85rem 1rem 0.9rem 0.85rem;
+}
+
+.entry-tool.entry-running {
+  border-left-color: var(--warning);
+}
+
+.entry-tool.entry-error {
+  border-left-color: var(--danger);
+}
+
+.tool-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.tool-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.tool-name {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
 .entry-badge {
   display: inline-block;
-  margin-right: 0.5rem;
   font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -168,14 +256,15 @@
   border-radius: 999px;
 }
 
-.badge-call {
-  background: var(--accent-bg);
-  color: var(--accent);
+.badge-running {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--warning);
+  animation: pulse 1.4s ease-in-out infinite;
 }
 
 .badge-result {
-  background: rgba(148, 163, 184, 0.15);
-  color: var(--text-muted);
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--success);
 }
 
 .badge-failed {
@@ -183,19 +272,25 @@
   color: var(--danger);
 }
 
-.entry-error {
-  border-left-color: var(--danger);
+.entry-ms {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
 }
 
-.entry-ms {
-  margin-left: 0.5rem;
-  font-size: 0.72rem;
+.field-label {
+  margin: 0.5rem 0 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--text-muted);
 }
 
 .entry-args,
 .entry-result {
-  margin: 0.5rem 0 0;
+  margin: 0;
   padding: 0.6rem 0.8rem;
   border-radius: 0.5rem;
   background: var(--bg);
@@ -205,6 +300,13 @@
   max-height: 14rem;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.running-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  color: var(--warning);
+  font-style: italic;
 }
 
 .recovery-note {
@@ -230,4 +332,60 @@
   margin: 0.9rem 0 0;
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Collapsed by default — depth for engineering managers, kept out of the
+   recruiter's way until they choose to open it. */
+.build-panel {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+
+  summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--text);
+
+    &:hover {
+      color: var(--accent);
+    }
+  }
+}
+
+.build-body {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.build-section p:not(.build-heading) {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+
+  code {
+    color: var(--accent);
+    font-size: 0.78em;
+  }
+}
+
+.build-heading {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text);
 }

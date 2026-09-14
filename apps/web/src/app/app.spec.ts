@@ -24,14 +24,19 @@ describe('App', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('hides the nav chrome when signed out', async () => {
+  it('shows the conversion header (name, CV, full profile) even when signed out', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.topbar')).toBeFalsy();
+    // The header is the primary funnel back to build-with-deepak.com, so it
+    // must be visible on the pre-login gate too, not just once inside the demo.
+    expect(compiled.querySelector('.topbar')).toBeTruthy();
+    expect(compiled.querySelector('.identity-name')?.textContent).toContain('Deepak Kumar Jha');
+    expect(compiled.querySelector('.cv-button')).toBeTruthy();
+    expect(compiled.querySelector('.session-badge')).toBeFalsy();
   });
 
-  it('shows nav and a demo-session badge once a token exists', async () => {
+  it('adds a demo-session badge and sign-out control once a token exists', async () => {
     localStorage.setItem('mcp_demo_token', 'header.payload.signature');
     // AuthService reads localStorage at construction; a fresh injector picks
     // up the token we just planted.
@@ -53,7 +58,9 @@ describe('App', () => {
 
     TestBed.inject(AuthService).logout();
     fixture.detectChanges();
-    expect(compiled.querySelector('.topbar')).toBeFalsy();
+    // The header itself stays — only the session-scoped controls go away.
+    expect(compiled.querySelector('.topbar')).toBeTruthy();
+    expect(compiled.querySelector('.session-badge')).toBeFalsy();
   });
 
   it('carries the build-with-deepak.com brand footer with socials', async () => {

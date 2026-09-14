@@ -7,6 +7,9 @@
 .topbar {
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
 .topbar-inner {
@@ -14,45 +17,45 @@
   margin: 0 auto;
   padding: 0.75rem 1.5rem;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1.5rem;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
 }
 
-.brand {
-  font-weight: 800;
-  font-size: 0.9375rem;
-  margin: 0;
-  white-space: nowrap;
-}
-
-.nav {
+/* The single most important link on the page: this is what turns a
+   visitor impressed by the demo into someone who can reach the person
+   who built it. Text, not a logo — a name reads faster than a wordmark. */
+.identity {
   display: flex;
-  gap: 1rem;
-  flex: 1;
+  flex-direction: column;
+  text-decoration: none;
+  line-height: 1.3;
 
-  a {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-decoration: none;
-    padding: 0.35rem 0.6rem;
-    border-radius: 0.5rem;
-
-    &:hover {
-      color: var(--text);
-    }
-
-    &.active {
-      color: var(--accent);
-      background: var(--accent-bg);
-    }
+  &:hover .identity-name {
+    color: var(--accent);
   }
 }
 
-.session {
+.identity-name {
+  font-weight: 800;
+  font-size: 0.9375rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.identity-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.topbar-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem 0.9rem;
+  flex-wrap: wrap;
 }
 
 .session-badge {
@@ -67,13 +70,41 @@
   white-space: nowrap;
 }
 
+.cv-button {
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.6rem;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    opacity: 0.92;
+  }
+}
+
+.profile-link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--text);
+  }
+}
+
 .logout {
   border: none;
   background: none;
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
 
   &:hover {
     color: var(--text);
@@ -82,33 +113,5 @@
 
 .content {
   flex: 1;
-}
-
-.content-authed {
   padding: 2rem 1.5rem 3rem;
-}
-
-.topbar-logo {
-  display: inline-flex;
-  align-items: center;
-  background: #f1f5f9;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  padding: 0.25rem 0.5rem;
-
-  img {
-    height: 1.5rem;
-    width: auto;
-    display: block;
-  }
-
-  &:hover {
-    border-color: var(--accent);
-  }
-}
-
-/* No nav row in this app — let the brand name take the middle so the
-   session controls stay pinned right. */
-.brand {
-  flex: 1;
 }
