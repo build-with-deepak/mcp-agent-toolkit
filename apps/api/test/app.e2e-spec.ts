@@ -69,11 +69,13 @@ describe('MCP Agent API (e2e)', () => {
     const token = (login.body as { accessToken: string }).accessToken;
 
     // Empty question → 400 proves the request cleared the auth guard
-    // without this test needing a live Ollama.
+    // without this test needing a live Ollama. A valid scenarioKey is
+    // included so the 400 is isolated to the empty-question failure,
+    // not also failing scenarioKey validation.
     await request(app.getHttpServer())
       .post('/api/agent/stream')
       .set('Authorization', `Bearer ${token}`)
-      .send({ question: '' })
+      .send({ question: '', scenarioKey: 'logistics' })
       .expect(400);
   });
 });

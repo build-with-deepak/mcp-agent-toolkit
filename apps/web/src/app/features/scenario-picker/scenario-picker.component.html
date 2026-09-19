@@ -1,0 +1,68 @@
+<div class="picker">
+  <p class="picker-eyebrow">Choose a business scenario</p>
+
+  @if (loadingCatalog()) {
+    <p class="picker-status">Loading scenarios&hellip;</p>
+  } @else {
+    <div class="bwd-grid bwd-grid--3">
+      @for (scenario of scenarios(); track scenario.key) {
+        <div class="bwd-card bwd-card--interactive scenario-card">
+          <div class="scenario-card-head">
+            <span class="bwd-plate scenario-plate" aria-hidden="true">{{ icons[scenario.key] }}</span>
+            <p class="bwd-card-title scenario-title">{{ scenario.label }}</p>
+          </div>
+
+          <div class="scenario-actions">
+            <button
+              type="button"
+              class="bwd-btn bwd-btn--primary scenario-btn"
+              (click)="use(scenario.key)"
+            >
+              Use this scenario
+            </button>
+            <button
+              type="button"
+              class="bwd-btn bwd-btn--ghost scenario-btn"
+              (click)="preview(scenario.key)"
+            >
+              What it does
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (error()) {
+    <p class="picker-error">{{ error() }}</p>
+  }
+</div>
+
+<app-info-modal
+  [title]="previewScenario()?.label ?? ''"
+  [open]="previewKey() !== null"
+  (closed)="closePreview()"
+>
+  @if (previewScenario(); as scenario) {
+    <section class="preview-questions">
+      <p class="preview-heading">Suggested prompts</p>
+      <ul>
+        @for (prompt of scenario.suggestedPrompts; track prompt) {
+          <li>{{ prompt }}</li>
+        }
+      </ul>
+    </section>
+
+    <section class="preview-tools">
+      <p class="preview-heading">{{ scenario.tools.length }} tools available over MCP</p>
+      <ul>
+        @for (tool of scenario.tools; track tool.name) {
+          <li>
+            <code>{{ tool.name }}</code>
+            <p>{{ tool.description }}</p>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</app-info-modal>

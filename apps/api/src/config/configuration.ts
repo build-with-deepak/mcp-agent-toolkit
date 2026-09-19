@@ -57,7 +57,12 @@ export default (): { app: AppConfig } => {
         model: process.env.OLLAMA_MODEL ?? 'llama3.1:8b',
       },
       agent: {
-        maxSteps: Number(process.env.AGENT_MAX_STEPS ?? 6),
+        // Several scenario tool chains (e.g. sales: find_customer →
+        // list_products → check_pricing → check_availability →
+        // create_lead → schedule_meeting) are 5-6 sequential tool calls
+        // before a final answer — raised from 6 so a real multi-tool
+        // scenario prompt doesn't hit the ceiling mid-demo.
+        maxSteps: Number(process.env.AGENT_MAX_STEPS ?? 9),
         maxQuestionChars: Number(process.env.MAX_QUESTION_CHARS ?? 1000),
       },
       rateLimit: {

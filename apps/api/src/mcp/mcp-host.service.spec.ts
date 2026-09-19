@@ -26,10 +26,21 @@ describe('McpHostService (protocol round-trip)', () => {
     service = new McpHostService(dbStub);
   });
 
-  it('exposes exactly the three tools over MCP list_tools, with schemas', async () => {
-    const tools = await service.listToolsForOllama();
+  it('exposes exactly the logistics scenario\'s allowlisted tools over MCP list_tools, with schemas', async () => {
+    const tools = await service.listToolsForOllama('logistics');
     const names = tools.map((tool) => tool.function.name).sort();
-    expect(names).toEqual(['calculate', 'get_weather', 'query_database']);
+    expect(names).toEqual(
+      [
+        'check_delivery_sla',
+        'create_escalation',
+        'find_alternative_vehicle',
+        'find_shipment',
+        'get_warehouse_status',
+        'get_weather',
+        'list_driver_status',
+        'notify_customer',
+      ].sort(),
+    );
 
     for (const tool of tools) {
       expect(tool.type).toBe('function');
@@ -40,6 +51,55 @@ describe('McpHostService (protocol round-trip)', () => {
         'object',
       );
     }
+  });
+
+  it("exposes exactly the sales scenario's allowlisted tools", async () => {
+    const tools = await service.listToolsForOllama('sales');
+    const names = tools.map((tool) => tool.function.name).sort();
+    expect(names).toEqual(
+      [
+        'calculate',
+        'check_availability',
+        'check_pricing',
+        'create_lead',
+        'find_customer',
+        'list_products',
+        'schedule_meeting',
+      ].sort(),
+    );
+  });
+
+  it("exposes exactly the service scenario's allowlisted tools", async () => {
+    const tools = await service.listToolsForOllama('service');
+    const names = tools.map((tool) => tool.function.name).sort();
+    expect(names).toEqual(
+      [
+        'calculate',
+        'check_customer_history',
+        'check_policy',
+        'create_case',
+        'get_delivery_status',
+        'get_order',
+      ].sort(),
+    );
+  });
+
+  it('keeps query_database registered and directly callable even though no scenario allowlists it', async () => {
+    // Retired from the scenario picker (none of the 3 scenarios fit it),
+    // but the tool, its tests and its DB wiring stay in the repo — not
+    // returned by listToolsForOllama for any scenario, but callTool()
+    // doesn't filter, so it's still reachable directly.
+    const logisticsTools = await service.listToolsForOllama('logistics');
+    const salesTools = await service.listToolsForOllama('sales');
+    const serviceTools = await service.listToolsForOllama('service');
+    for (const tools of [logisticsTools, salesTools, serviceTools]) {
+      expect(tools.map((t) => t.function.name)).not.toContain('query_database');
+    }
+
+    const outcome = await service.callTool('query_database', {
+      sql: 'SELECT 1',
+    });
+    expect(outcome.isError).toBe(false);
   });
 
   it('round-trips a calculator call through the protocol', async () => {

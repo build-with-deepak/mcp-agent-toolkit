@@ -2,40 +2,37 @@
   <app-demo-header />
 
   <main class="content">
-    @if (auth.isAuthenticated()) {
-      <div class="page">
-        <header class="page-header">
-          <p class="eyebrow">MCP Agent Toolkit</p>
-          <h1>Watch an agent use real tools, live.</h1>
-          <p class="subtitle">
-            A Model Context Protocol agent wired to a read-only database, live weather and a
-            calculator — every tool call, argument and result streamed to the screen as it
-            happens, not summarized after the fact.
-          </p>
-        </header>
+    <div class="page">
+      <header class="page-header">
+        <p class="eyebrow">MCP Agent Toolkit</p>
+        <h1>Watch an agent use real tools, live.</h1>
+        <p class="subtitle">
+          A Model Context Protocol agent wired to real, scenario-specific tools — three
+          business contexts, each with its own focused toolset — every tool call, argument
+          and result streamed to the screen as it happens, not summarized after the fact.
+        </p>
+      </header>
 
-        <section class="explainer-panel">
-          <p class="explainer-title">What this demonstrates</p>
-          <p>
-            An AI that can answer questions is useful. An AI that can safely query your actual
-            database, call your internal APIs and act on the result is a different category of
-            product. This is a Model Context Protocol agent wired to real tools — read-only SQL,
-            live weather and a calculator — with every tool call shown as it happens. Hard part:
-            giving an agent real system access while keeping every action visible and bounded.
+      <section class="explainer-panel">
+        <p class="explainer-title">What this demonstrates</p>
+        <p>
+          An AI that can answer questions is useful. An AI that can safely query your actual
+          systems, call your internal tools and act on the result is a different category of
+          product. This is a Model Context Protocol agent wired to real tools, scoped per
+          business scenario by an allowlist, with every tool call shown as it happens. Hard
+          part: giving an agent real system access while keeping every action visible and
+          bounded.
+        </p>
+        @if (auth.isDemo()) {
+          <p class="explainer-session">
+            <strong>Demo account:</strong> this session can run the live agent against any
+            scenario's sample tools. All tool data is read-only or simulated by design.
           </p>
-          @if (auth.isDemo()) {
-            <p class="explainer-session">
-              <strong>Demo account:</strong> this session can run the live agent against its sample
-              tools. Database access remains read-only by design.
-            </p>
-          }
-        </section>
+        }
+      </section>
 
-        <router-outlet />
-      </div>
-    } @else {
       <router-outlet />
-    }
+    </div>
   </main>
 
   <app-demo-footer />

@@ -1,29 +1,44 @@
 <div class="agent">
+  @if (auth.isAuthenticated() && !scenario()) {
+    <app-scenario-picker (selected)="selectScenario($event)" />
+  }
+
   <div class="workspace">
     <main class="workspace-main">
-      <form class="ask-form" (submit)="$event.preventDefault(); ask()">
-        <textarea
-          class="question-input"
-          rows="3"
-          maxlength="1000"
-          placeholder="Ask something that needs the database, the weather and some math…"
-          [(ngModel)]="question"
-          name="question"
-          [disabled]="isRunning()"
-        ></textarea>
-        <button class="ask-button" type="submit" [disabled]="isRunning() || !question().trim()">
-          {{ isRunning() ? 'Working…' : 'Ask the agent' }}
-        </button>
-      </form>
+      @if (!auth.isAuthenticated()) {
+        <app-auth-panel demo="agent" />
+      } @else if (!scenario(); as noScenario) {
+        <p class="scenario-hint">Pick a scenario above to get started.</p>
+      } @else {
+        <div class="scenario-bar">
+          <span>Scenario: <strong>{{ scenario()!.label }}</strong></span>
+          <button class="change-scenario" type="button" (click)="changeScenario()">Change scenario</button>
+        </div>
 
-      <div class="suggestions">
-        <span class="suggestions-label">Try asking:</span>
-        @for (suggestion of suggestions; track suggestion) {
-          <button class="suggestion" type="button" (click)="useSuggestion(suggestion)" [disabled]="isRunning()">
-            {{ suggestion }}
+        <form class="ask-form" (submit)="$event.preventDefault(); ask()">
+          <textarea
+            class="question-input"
+            rows="3"
+            maxlength="1000"
+            placeholder="Ask this agent something that needs its tools…"
+            [(ngModel)]="question"
+            name="question"
+            [disabled]="isRunning()"
+          ></textarea>
+          <button class="ask-button" type="submit" [disabled]="isRunning() || !question().trim()">
+            {{ isRunning() ? 'Working…' : 'Ask the agent' }}
           </button>
-        }
-      </div>
+        </form>
+
+        <div class="suggestions">
+          <span class="suggestions-label">Try asking:</span>
+          @for (suggestion of suggestions(); track suggestion) {
+            <button class="suggestion" type="button" (click)="useSuggestion(suggestion)" [disabled]="isRunning()">
+              {{ suggestion }}
+            </button>
+          }
+        </div>
+      }
 
       @if (error()) {
         <p class="error-banner">{{ error() }}</p>
@@ -43,7 +58,9 @@
             @for (entry of timeline(); track $index) {
               @switch (entry.kind) {
                 @case ('step') {
-                  <li class="entry entry-step">Reasoning step {{ entry.step }}</li>
+                  <li class="entry entry-step">
+                    Reasoning step {{ entry.step }}@if (entry.maxSteps) { of {{ entry.maxSteps }} }
+                  </li>
                 }
                 @case ('tool') {
                   <li
@@ -70,6 +87,10 @@
                         <span class="entry-ms num">{{ entry.ms }}ms</span>
                       }
                     </div>
+
+                    @if (toolDescription(entry.name); as description) {
+                      <p class="tool-description">{{ description }}</p>
+                    }
 
                     <p class="field-label">Arguments</p>
                     <pre class="entry-args">{{ entry.args }}</pre>
@@ -108,46 +129,18 @@
         </div>
       }
 
-      <details class="build-panel">
-        <summary>How this is built</summary>
-        <div class="build-body">
-          <div class="build-section">
-            <p class="build-heading">Stack</p>
-            <p>
-              Frontend: Angular 21 (standalone components, signals, native control flow), streaming
-              the agent's run over SSE via <code>fetch</code> + <code>ReadableStream</code> rather
-              than <code>EventSource</code> — that's what lets the client send a real
-              <code>Authorization</code> header on a POST instead of a token riding in the URL.
-              Backend: NestJS 11, PostgreSQL, JWT demo sessions, request rate limiting. The agent
-              itself talks to a real <code>@&#8203;modelcontextprotocol/sdk</code> <code>McpServer</code>
-              and MCP <code>Client</code>, connected over the SDK's in-memory transport in the same
-              process — a genuine MCP protocol boundary, not tool functions dressed up as one.
-              Reasoning comes from a local Ollama model (llama3.1:8b) that supports tool calling.
-            </p>
-          </div>
-          <div class="build-section">
-            <p class="build-heading">Key decision: two layers of read-only enforcement</p>
-            <p>
-              The agent's SQL is untrusted input by design — an LLM writes it from a stranger's
-              free-text question. So "read-only" isn't just a UI claim: an app-level guard rejects
-              anything that isn't a single <code>SELECT</code>/<code>WITH</code> statement before it
-              runs, and the query then executes as a dedicated <code>mcp_readonly</code> Postgres
-              role with SELECT-only grants, a read-only transaction mode and a 5s statement timeout.
-              The role is the layer that holds even if the guard has a bug.
-            </p>
-          </div>
-          <div class="build-section">
-            <p class="build-heading">Honest trade-off</p>
-            <p>
-              Each reasoning step is a non-streaming call to the model — whether it's making a tool
-              call or giving a final answer is only knowable once the response is complete. That
-              costs some perceived latency per step, traded deliberately for what's actually worth
-              watching live: discrete tool-call and tool-result events as they happen, instead of
-              raw tokens of JSON being assembled.
-            </p>
-          </div>
+      <div class="build-cta">
+        <div>
+          <p class="build-cta-title">Curious how this is built?</p>
+          <p class="build-cta-copy">
+            Stack, key decisions and trade-offs are written up in full on the detailed
+            architecture page — not squeezed into an accordion here.
+          </p>
         </div>
-      </details>
+        <a class="bwd-btn bwd-btn--primary" href="https://build-with-deepak.com/agent#architecture" target="_blank" rel="noopener">
+          See the full architecture →
+        </a>
+      </div>
     </main>
 
     <aside class="guide">
@@ -157,8 +150,8 @@
           <li>
             <span class="step-num">1</span>
             <div>
-              <strong>Ask one of the suggestions</strong>
-              <p>Or write your own — the agent has three tools: a read-only database, live weather, and a calculator.</p>
+              <strong>Pick a scenario, then ask a suggestion</strong>
+              <p>Or write your own — each scenario has its own focused set of tools. "What can this agent do?" on any scenario card shows the full list before you commit to one.</p>
             </div>
           </li>
           <li>
@@ -171,8 +164,8 @@
           <li>
             <span class="step-num">3</span>
             <div>
-              <strong>Try a two-tool question</strong>
-              <p>The suggestions that combine the database with weather or math are the ones that actually show what an agent is, versus a chatbot with extra steps.</p>
+              <strong>Try a multi-tool question</strong>
+              <p>The suggestions that chain several tools are the ones that actually show what an agent is, versus a chatbot with extra steps.</p>
             </div>
           </li>
         </ol>
@@ -199,13 +192,14 @@
         <p class="guide-eyebrow">Safe by construction</p>
         <p class="trust-note">
           <span class="trust-icon" aria-hidden="true">🔒</span>
-          SQL access is strictly read-only against a sample dataset — blocked from writing both
-          by query validation and by the database role the query actually runs as.
+          Each scenario's tools are scoped by an allowlist — an agent running the Sales scenario
+          cannot reach the Logistics or Service tools, or the separate read-only SQL tool, even
+          though all of them are registered on the same MCP server.
         </p>
         <p class="trust-note">
           <span class="trust-icon" aria-hidden="true">⏳</span>
           Your questions and the agent's responses aren't stored beyond this session — nothing
-          is written to a database or a persistent log.
+          is written to a persistent log.
         </p>
       </section>
 

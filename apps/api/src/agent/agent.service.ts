@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AppConfig } from '../config/configuration';
 import { McpHostService, type OllamaToolSchema } from '../mcp/mcp-host.service';
+import { getAgentScenario, ScenarioKey } from '../mcp/scenarios/registry';
 
 interface OllamaToolCall {
   function: { name: string; arguments: Record<string, unknown> };
@@ -16,14 +17,6 @@ interface OllamaChatMessage {
 export interface AgentEventSink {
   (type: string, data: unknown): void;
 }
-
-const SYSTEM_PROMPT =
-  'You are a data assistant with access to tools: a read-only SQL database of a ' +
-  'commerce dataset, a current-weather lookup, and a calculator. Use tools to ' +
-  'answer factually — never invent numbers you could query or compute. When a ' +
-  'tool returns an error, read the error, fix your input and try again rather ' +
-  'than giving up. Answer concisely, and state which tool results your answer ' +
-  'is based on.';
 
 /**
  * The agent loop: model → tool calls → results → model, until the model
@@ -52,11 +45,21 @@ export class AgentService {
   }
 
   /** Never throws — every failure path emits an `error` event. */
-  async run(question: string, emit: AgentEventSink): Promise<void> {
+  async run(
+    scenarioKey: ScenarioKey,
+    question: string,
+    emit: AgentEventSink,
+  ): Promise<void> {
+    const scenario = getAgentScenario(scenarioKey);
+    if (!scenario) {
+      emit('error', { message: `Unknown scenario "${scenarioKey}".` });
+      return;
+    }
+
     const started = Date.now();
     let tools: OllamaToolSchema[];
     try {
-      tools = await this.mcp.listToolsForOllama();
+      tools = await this.mcp.listToolsForOllama(scenarioKey);
     } catch (err) {
       emit('error', {
         message: `Could not load tools: ${(err as Error).message}`,
@@ -73,7 +76,7 @@ export class AgentService {
     });
 
     const messages: OllamaChatMessage[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: scenario.systemPrompt },
       { role: 'user', content: question },
     ];
 

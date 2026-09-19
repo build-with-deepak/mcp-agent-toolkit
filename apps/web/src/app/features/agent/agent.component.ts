@@ -1,7 +1,10 @@
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AuthPanelComponent } from '../../core/auth-panel.component';
 import { AuthService } from '../../core/auth.service';
 import { streamSse } from '../../core/sse-client';
+import { AgentScenario } from '../../core/models';
+import { ScenarioPickerComponent } from '../scenario-picker/scenario-picker.component';
 
 export interface ToolInfo {
   name: string;
@@ -16,7 +19,7 @@ export interface ToolInfo {
  * rather than only ever showing calls after the fact.
  */
 export type TimelineEntry =
-  | { kind: 'step'; step: number }
+  | { kind: 'step'; step: number; maxSteps: number }
   | {
       kind: 'tool';
       name: string;
@@ -26,30 +29,36 @@ export type TimelineEntry =
       ms: number | null;
     };
 
-/** Emoji badge per tool — a fast visual anchor in a trace with three tools. */
+/** Emoji badge per tool — a fast visual anchor in a trace. Unmapped tools
+ * fall back to a generic wrench, so a new scenario's tools degrade
+ * gracefully rather than needing an icon before they can ship. */
 export const TOOL_ICONS: Partial<Record<string, string>> = {
   query_database: '🗄️',
   get_weather: '⛅',
   calculate: '🧮',
+  find_shipment: '📦',
+  list_driver_status: '🧑‍✈️',
+  get_warehouse_status: '🏭',
+  check_delivery_sla: '⏱️',
+  find_alternative_vehicle: '🚐',
+  create_escalation: '🚨',
+  notify_customer: '📣',
+  find_customer: '🔍',
+  list_products: '📋',
+  check_pricing: '💰',
+  check_availability: '📦',
+  create_lead: '🌱',
+  schedule_meeting: '📅',
+  get_order: '🧾',
+  get_delivery_status: '🚚',
+  check_policy: '📖',
+  check_customer_history: '🗂️',
+  create_case: '🗃️',
 };
-
-/**
- * Three guided prompts, not four — one per tool combination that best
- * shows what an agent actually is. At least one must chain two tools in a
- * single request; here two of three do, because a single-tool call reads
- * exactly like a plain chatbot and undersells the product. Table/column
- * names match apps/api/db/schema.sql (customers.city, products.category,
- * products.price_usd) so these always resolve against the real dataset.
- */
-const SUGGESTIONS = [
-  'What is the total revenue from customers in Dubai, and what is the weather there right now?',
-  'Which product category made the most money?',
-  'What would the three most expensive products cost together with 5% tax?',
-];
 
 @Component({
   selector: 'app-agent',
-  imports: [FormsModule],
+  imports: [FormsModule, AuthPanelComponent, ScenarioPickerComponent],
   templateUrl: './agent.component.html',
   styleUrl: './agent.component.scss',
 })
@@ -57,15 +66,43 @@ export class AgentComponent implements OnDestroy {
   readonly auth = inject(AuthService);
   private abortController: AbortController | null = null;
 
-  readonly suggestions = SUGGESTIONS;
   readonly toolIcons = TOOL_ICONS;
+  readonly scenario = signal<AgentScenario | null>(null);
+  readonly suggestions = computed(() => this.scenario()?.suggestedPrompts ?? []);
   readonly question = signal('');
   readonly isRunning = signal(false);
   readonly tools = signal<ToolInfo[]>([]);
+  readonly maxSteps = signal(0);
   readonly timeline = signal<TimelineEntry[]>([]);
   readonly answer = signal('');
   readonly summary = signal<{ steps: number; toolCalls: number; totalMs: number } | null>(null);
   readonly error = signal<string | null>(null);
+
+  selectScenario(scenario: AgentScenario): void {
+    this.scenario.set(scenario);
+    this.resetRun();
+  }
+
+  changeScenario(): void {
+    this.scenario.set(null);
+    this.resetRun();
+  }
+
+  private resetRun(): void {
+    this.question.set('');
+    this.timeline.set([]);
+    this.answer.set('');
+    this.summary.set(null);
+    this.error.set(null);
+    this.tools.set([]);
+  }
+
+  /** The tool schema's own description, read from the `session` event —
+   * "Checking shipment status" reads better mid-trace than the raw function
+   * name, and this is free: the data is already sent, just unused until now. */
+  toolDescription(name: string): string | null {
+    return this.tools().find((tool) => tool.name === name)?.description ?? null;
+  }
 
   /** Populates AND runs — a first-time visitor shouldn't have to type
    * anything to see the trace happen. */
@@ -78,7 +115,8 @@ export class AgentComponent implements OnDestroy {
   async ask(): Promise<void> {
     const question = this.question().trim();
     const token = this.auth.token;
-    if (!question || !token || this.isRunning()) return;
+    const scenarioKey = this.scenario()?.key;
+    if (!question || !token || !scenarioKey || this.isRunning()) return;
 
     this.timeline.set([]);
     this.answer.set('');
@@ -90,19 +128,26 @@ export class AgentComponent implements OnDestroy {
     try {
       const events = streamSse(
         '/api/agent/stream',
-        { question },
+        { question, scenarioKey },
         token,
         this.abortController.signal,
       );
       for await (const event of events) {
         switch (event.type) {
-          case 'session':
-            this.tools.set((event.data as { tools: ToolInfo[] }).tools);
+          case 'session': {
+            const data = event.data as { tools: ToolInfo[]; maxSteps: number };
+            this.tools.set(data.tools);
+            this.maxSteps.set(data.maxSteps);
             break;
+          }
           case 'step':
             this.timeline.update((list) => [
               ...list,
-              { kind: 'step', step: (event.data as { step: number }).step },
+              {
+                kind: 'step',
+                step: (event.data as { step: number }).step,
+                maxSteps: this.maxSteps(),
+              },
             ]);
             break;
           case 'tool_call': {
