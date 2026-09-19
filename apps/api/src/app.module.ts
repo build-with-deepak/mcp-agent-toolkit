@@ -6,6 +6,7 @@ import configuration, { AppConfig } from './config/configuration';
 import { AgentModule } from './agent/agent.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { ScopesGuard } from './auth/scopes.guard';
 import { DbModule } from './db/db.module';
 import { HealthController } from './health/health.controller';
 import { McpModule } from './mcp/mcp.module';
@@ -33,6 +34,9 @@ import { McpModule } from './mcp/mcp.module';
     // guard first.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // After JwtAuthGuard, which is what puts the `scope` claim on the
+    // request this one reads. Guards run in registration order.
+    { provide: APP_GUARD, useClass: ScopesGuard },
   ],
 })
 export class AppModule {}

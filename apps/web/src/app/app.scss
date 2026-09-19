@@ -144,5 +144,83 @@
 
 .content {
   flex: 1;
-  padding: 2rem 1.5rem 3rem;
 }
+
+.page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 3rem 1.5rem 2.5rem;
+}
+
+/* Deliberately the same page-title treatment as the RAG demo. It lives in
+   the app shell (not the routed tool workspace) so it remains the stable
+   page introduction regardless of how the agent screen evolves. */
+.page-header {
+  max-width: 76rem;
+  width: 100%;
+  margin: 0 auto 2.5rem;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin: 0 0 0.75rem;
+}
+
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.2;
+  margin: 0 0 0.9rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 42rem;
+}
+
+.explainer-panel {
+  max-width: 76rem;
+  width: 100%;
+  margin: 0 auto 2rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    max-width: 58rem;
+  }
+
+  .explainer-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+}
+
+.explainer-session {
+  margin-top: 0.85rem !important;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted) !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.55 !important;
+}
+
+.explainer-session strong { color: var(--text); }

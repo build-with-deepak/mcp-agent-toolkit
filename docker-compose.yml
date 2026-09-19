@@ -27,8 +27,9 @@ services:
       NODE_ENV: production
       PORT: 3000
       CORS_ORIGIN: https://agent.build-with-deepak.com
-      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
-      DEMO_TOKEN_TTL: ${DEMO_TOKEN_TTL:-2h}
+      IDENTITY_ISSUER: ${IDENTITY_ISSUER:-https://id.build-with-deepak.com}
+      IDENTITY_JWKS_URL: ${IDENTITY_JWKS_URL:-https://id.build-with-deepak.com/.well-known/jwks.json}
+      IDENTITY_AUDIENCE: ${IDENTITY_AUDIENCE:-agent.build-with-deepak.com}
       DATABASE_URL: postgres://mcp:${POSTGRES_PASSWORD}@postgres:5432/mcp_demo
       MCP_READONLY_PASSWORD: ${MCP_READONLY_PASSWORD:?set MCP_READONLY_PASSWORD in .env}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}

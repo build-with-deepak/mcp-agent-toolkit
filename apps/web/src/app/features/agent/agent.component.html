@@ -1,176 +1,222 @@
 <div class="agent">
-  <div class="intro-panel">
-    <p class="intro-label">What this demonstrates</p>
-    <p class="intro-text">
-      An AI that can answer questions is useful. An AI that can safely query your actual
-      database, call your internal APIs and act on the result is a different category of
-      product. This is a Model Context Protocol agent wired to real tools — read-only SQL,
-      live weather, a calculator — with every tool call shown as it happens. Hard part:
-      giving an agent real system access while keeping every action visible and bounded.
-    </p>
-  </div>
+  <div class="workspace">
+    <main class="workspace-main">
+      <form class="ask-form" (submit)="$event.preventDefault(); ask()">
+        <textarea
+          class="question-input"
+          rows="3"
+          maxlength="1000"
+          placeholder="Ask something that needs the database, the weather and some math…"
+          [(ngModel)]="question"
+          name="question"
+          [disabled]="isRunning()"
+        ></textarea>
+        <button class="ask-button" type="submit" [disabled]="isRunning() || !question().trim()">
+          {{ isRunning() ? 'Working…' : 'Ask the agent' }}
+        </button>
+      </form>
 
-  <form class="ask-form" (submit)="$event.preventDefault(); ask()">
-    <textarea
-      class="question-input"
-      rows="3"
-      maxlength="1000"
-      placeholder="Ask something that needs the database, the weather and some math…"
-      [(ngModel)]="question"
-      name="question"
-      [disabled]="isRunning()"
-    ></textarea>
-    <button class="ask-button" type="submit" [disabled]="isRunning() || !question().trim()">
-      {{ isRunning() ? 'Working…' : 'Ask the agent' }}
-    </button>
-  </form>
-
-  <div class="suggestions">
-    @for (suggestion of suggestions; track suggestion) {
-      <button class="suggestion" type="button" (click)="useSuggestion(suggestion)" [disabled]="isRunning()">
-        {{ suggestion }}
-      </button>
-    }
-  </div>
-
-  <div class="trust-notes">
-    <p class="trust-note">
-      <span class="trust-icon" aria-hidden="true">🔒</span>
-      SQL access is strictly read-only against a sample dataset — writes are blocked both by
-      query validation and by the database role the query actually runs as.
-    </p>
-    <p class="trust-note">
-      <span class="trust-icon" aria-hidden="true">⏳</span>
-      Your questions and the agent's responses are not stored beyond this session — nothing
-      is written to a database or a persistent log.
-    </p>
-  </div>
-
-  @if (tools().length > 0) {
-    <details class="tools-panel">
-      <summary>{{ tools().length }} tools available over MCP</summary>
-      <ul>
-        @for (tool of tools(); track tool.name) {
-          <li><code>{{ tool.name }}</code> — {{ tool.description }}</li>
+      <div class="suggestions">
+        <span class="suggestions-label">Try asking:</span>
+        @for (suggestion of suggestions; track suggestion) {
+          <button class="suggestion" type="button" (click)="useSuggestion(suggestion)" [disabled]="isRunning()">
+            {{ suggestion }}
+          </button>
         }
-      </ul>
-    </details>
-  }
+      </div>
 
-  @if (error()) {
-    <p class="error-banner">{{ error() }}</p>
-  }
+      @if (error()) {
+        <p class="error-banner">{{ error() }}</p>
+      }
 
-  @if (timeline().length > 0) {
-    <div class="panel trace-panel">
-      <p class="panel-title">Live tool-call trace</p>
-      <ol class="timeline">
-        @for (entry of timeline(); track $index) {
-          @switch (entry.kind) {
-            @case ('step') {
-              <li class="entry entry-step">Reasoning step {{ entry.step }}</li>
-            }
-            @case ('tool') {
-              <li
-                class="entry entry-tool"
-                [class.entry-running]="entry.status === 'running'"
-                [class.entry-error]="entry.status === 'error'"
-              >
-                <div class="tool-head">
-                  <span class="tool-icon" aria-hidden="true">{{ toolIcons[entry.name] ?? '🔧' }}</span>
-                  <code class="tool-name">{{ entry.name }}</code>
-                  <span
-                    class="entry-badge"
-                    [class.badge-running]="entry.status === 'running'"
-                    [class.badge-result]="entry.status === 'ok'"
-                    [class.badge-failed]="entry.status === 'error'"
-                  >
-                    @switch (entry.status) {
-                      @case ('running') { calling… }
-                      @case ('error') { tool error }
-                      @default { result }
-                    }
-                  </span>
-                  @if (entry.ms !== null) {
-                    <span class="entry-ms num">{{ entry.ms }}ms</span>
-                  }
-                </div>
-
-                <p class="field-label">Arguments</p>
-                <pre class="entry-args">{{ entry.args }}</pre>
-
-                @if (entry.status === 'running') {
-                  <p class="running-note">Waiting on the tool to respond…</p>
-                } @else {
-                  <p class="field-label">Result</p>
-                  <pre class="entry-result">{{ entry.result }}</pre>
-                  @if (entry.status === 'error') {
-                    <p class="recovery-note">The error goes back to the model, which can fix its input and retry — watch the next step.</p>
-                  }
-                }
-              </li>
-            }
-          }
-        }
-        @if (isRunning()) {
-          <li class="entry entry-waiting">The model is thinking…</li>
-        }
-      </ol>
-    </div>
-  }
-
-  @if (answer()) {
-    <div class="panel">
-      <p class="panel-title">Answer</p>
-      <p class="answer-text">{{ answer() }}</p>
-      @if (summary(); as s) {
-        <p class="summary-line num">
-          {{ s.steps }} reasoning step{{ s.steps === 1 ? '' : 's' }} ·
-          {{ s.toolCalls }} tool call{{ s.toolCalls === 1 ? '' : 's' }} ·
-          {{ s.totalMs }}ms total
+      @if (isRunning() && timeline().length === 0) {
+        <p class="status-line" aria-live="polite">
+          <span class="status-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+          Deciding which tools this question needs…
         </p>
       }
-    </div>
-  }
 
-  <details class="build-panel">
-    <summary>How this is built</summary>
-    <div class="build-body">
-      <div class="build-section">
-        <p class="build-heading">Stack</p>
-        <p>
-          Frontend: Angular 21 (standalone components, signals, native control flow), streaming
-          the agent's run over SSE via <code>fetch</code> + <code>ReadableStream</code> rather
-          than <code>EventSource</code> — that's what lets the client send a real
-          <code>Authorization</code> header on a POST instead of a token riding in the URL.
-          Backend: NestJS 11, PostgreSQL, JWT demo sessions, request rate limiting. The agent
-          itself talks to a real <code>@&#8203;modelcontextprotocol/sdk</code> <code>McpServer</code>
-          and MCP <code>Client</code>, connected over the SDK's in-memory transport in the same
-          process — a genuine MCP protocol boundary, not tool functions dressed up as one.
-          Reasoning comes from a local Ollama model (llama3.1:8b) that supports tool calling.
+      @if (timeline().length > 0) {
+        <div class="panel trace-panel">
+          <p class="panel-title">Live tool-call trace</p>
+          <ol class="timeline">
+            @for (entry of timeline(); track $index) {
+              @switch (entry.kind) {
+                @case ('step') {
+                  <li class="entry entry-step">Reasoning step {{ entry.step }}</li>
+                }
+                @case ('tool') {
+                  <li
+                    class="entry entry-tool"
+                    [class.entry-running]="entry.status === 'running'"
+                    [class.entry-error]="entry.status === 'error'"
+                  >
+                    <div class="tool-head">
+                      <span class="tool-icon" aria-hidden="true">{{ toolIcons[entry.name] ?? '🔧' }}</span>
+                      <code class="tool-name">{{ entry.name }}</code>
+                      <span
+                        class="entry-badge"
+                        [class.badge-running]="entry.status === 'running'"
+                        [class.badge-result]="entry.status === 'ok'"
+                        [class.badge-failed]="entry.status === 'error'"
+                      >
+                        @switch (entry.status) {
+                          @case ('running') { calling… }
+                          @case ('error') { tool error }
+                          @default { result }
+                        }
+                      </span>
+                      @if (entry.ms !== null) {
+                        <span class="entry-ms num">{{ entry.ms }}ms</span>
+                      }
+                    </div>
+
+                    <p class="field-label">Arguments</p>
+                    <pre class="entry-args">{{ entry.args }}</pre>
+
+                    @if (entry.status === 'running') {
+                      <p class="running-note">Waiting on the tool to respond…</p>
+                    } @else {
+                      <p class="field-label">Result</p>
+                      <pre class="entry-result">{{ entry.result }}</pre>
+                      @if (entry.status === 'error') {
+                        <p class="recovery-note">The error goes back to the model, which can fix its input and retry — watch the next step.</p>
+                      }
+                    }
+                  </li>
+                }
+              }
+            }
+            @if (isRunning()) {
+              <li class="entry entry-waiting">The model is thinking…</li>
+            }
+          </ol>
+        </div>
+      }
+
+      @if (answer()) {
+        <div class="panel">
+          <p class="panel-title">Answer</p>
+          <p class="answer-text">{{ answer() }}</p>
+          @if (summary(); as s) {
+            <p class="summary-line num">
+              {{ s.steps }} reasoning step{{ s.steps === 1 ? '' : 's' }} ·
+              {{ s.toolCalls }} tool call{{ s.toolCalls === 1 ? '' : 's' }} ·
+              {{ s.totalMs }}ms total
+            </p>
+          }
+        </div>
+      }
+
+      <details class="build-panel">
+        <summary>How this is built</summary>
+        <div class="build-body">
+          <div class="build-section">
+            <p class="build-heading">Stack</p>
+            <p>
+              Frontend: Angular 21 (standalone components, signals, native control flow), streaming
+              the agent's run over SSE via <code>fetch</code> + <code>ReadableStream</code> rather
+              than <code>EventSource</code> — that's what lets the client send a real
+              <code>Authorization</code> header on a POST instead of a token riding in the URL.
+              Backend: NestJS 11, PostgreSQL, JWT demo sessions, request rate limiting. The agent
+              itself talks to a real <code>@&#8203;modelcontextprotocol/sdk</code> <code>McpServer</code>
+              and MCP <code>Client</code>, connected over the SDK's in-memory transport in the same
+              process — a genuine MCP protocol boundary, not tool functions dressed up as one.
+              Reasoning comes from a local Ollama model (llama3.1:8b) that supports tool calling.
+            </p>
+          </div>
+          <div class="build-section">
+            <p class="build-heading">Key decision: two layers of read-only enforcement</p>
+            <p>
+              The agent's SQL is untrusted input by design — an LLM writes it from a stranger's
+              free-text question. So "read-only" isn't just a UI claim: an app-level guard rejects
+              anything that isn't a single <code>SELECT</code>/<code>WITH</code> statement before it
+              runs, and the query then executes as a dedicated <code>mcp_readonly</code> Postgres
+              role with SELECT-only grants, a read-only transaction mode and a 5s statement timeout.
+              The role is the layer that holds even if the guard has a bug.
+            </p>
+          </div>
+          <div class="build-section">
+            <p class="build-heading">Honest trade-off</p>
+            <p>
+              Each reasoning step is a non-streaming call to the model — whether it's making a tool
+              call or giving a final answer is only knowable once the response is complete. That
+              costs some perceived latency per step, traded deliberately for what's actually worth
+              watching live: discrete tool-call and tool-result events as they happen, instead of
+              raw tokens of JSON being assembled.
+            </p>
+          </div>
+        </div>
+      </details>
+    </main>
+
+    <aside class="guide">
+      <section class="guide-block">
+        <p class="guide-eyebrow">How to try this demo</p>
+        <ol class="guide-steps">
+          <li>
+            <span class="step-num">1</span>
+            <div>
+              <strong>Ask one of the suggestions</strong>
+              <p>Or write your own — the agent has three tools: a read-only database, live weather, and a calculator.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <div>
+              <strong>Watch the trace, not a spinner</strong>
+              <p>Every tool call streams in as it happens — which tool, what arguments, what it returned — before the final answer.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <div>
+              <strong>Try a two-tool question</strong>
+              <p>The suggestions that combine the database with weather or math are the ones that actually show what an agent is, versus a chatbot with extra steps.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      @if (tools().length > 0) {
+        <section class="guide-block">
+          <p class="guide-eyebrow">{{ tools().length }} tools available over MCP</p>
+          <ul class="tool-list">
+            @for (tool of tools(); track tool.name) {
+              <li>
+                <span class="tool-icon" aria-hidden="true">{{ toolIcons[tool.name] ?? '🔧' }}</span>
+                <div>
+                  <code>{{ tool.name }}</code>
+                  <p>{{ tool.description }}</p>
+                </div>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
+      <section class="guide-block guide-trust">
+        <p class="guide-eyebrow">Safe by construction</p>
+        <p class="trust-note">
+          <span class="trust-icon" aria-hidden="true">🔒</span>
+          SQL access is strictly read-only against a sample dataset — blocked from writing both
+          by query validation and by the database role the query actually runs as.
         </p>
-      </div>
-      <div class="build-section">
-        <p class="build-heading">Key decision: two layers of read-only enforcement</p>
-        <p>
-          The agent's SQL is untrusted input by design — an LLM writes it from a stranger's
-          free-text question. So "read-only" isn't just a UI claim: an app-level guard rejects
-          anything that isn't a single <code>SELECT</code>/<code>WITH</code> statement before it
-          runs, and the query then executes as a dedicated <code>mcp_readonly</code> Postgres
-          role with SELECT-only grants, a read-only transaction mode and a 5s statement timeout.
-          The role is the layer that holds even if the guard has a bug.
+        <p class="trust-note">
+          <span class="trust-icon" aria-hidden="true">⏳</span>
+          Your questions and the agent's responses aren't stored beyond this session — nothing
+          is written to a database or a persistent log.
         </p>
-      </div>
-      <div class="build-section">
-        <p class="build-heading">Honest trade-off</p>
-        <p>
-          Each reasoning step is a non-streaming call to the model — whether it's making a tool
-          call or giving a final answer is only knowable once the response is complete. That
-          costs some perceived latency per step, traded deliberately for what's actually worth
-          watching live: discrete tool-call and tool-result events as they happen, instead of
-          raw tokens of JSON being assembled.
+      </section>
+
+      <section class="guide-block">
+        <p class="guide-eyebrow">One account, three demos</p>
+        <p class="guide-copy">
+          The demo account above works here and on the RAG and Router demos with no separate
+          sign-in. <strong>Register a free account</strong> (one email, one code, no password) and
+          the same one carries across all three.
         </p>
-      </div>
-    </div>
-  </details>
+      </section>
+    </aside>
+  </div>
 </div>

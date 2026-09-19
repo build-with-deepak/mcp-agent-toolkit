@@ -54,7 +54,7 @@ const SUGGESTIONS = [
   styleUrl: './agent.component.scss',
 })
 export class AgentComponent implements OnDestroy {
-  private readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService);
   private abortController: AbortController | null = null;
 
   readonly suggestions = SUGGESTIONS;

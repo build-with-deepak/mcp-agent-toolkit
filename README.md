@@ -19,12 +19,24 @@ from them* stream to the screen as they happen.
 
 ## Try it
 
-**Continue with demo account** issues a real 2-hour session against the
-real API — same agent, same tools, same data. The sample database is
-shared and read-only, so demo sessions need no per-user cleanup: nothing
-a visitor does can write anything. Registration (persistent per-user
-data) is in progress; the Register button and `POST /api/auth/register`
-(501) both say so honestly.
+Two ways in, and one account for all three demos in this suite.
+
+**Try it now — demo account** signs you in with one click against the real
+API: same agent, same MCP tools, same database. It is a shared account and
+its token carries `demo:read` only, so it can run everything here and cannot
+make the server store anything. That is what lets the front door stay open
+to anyone without putting a single VPS at the mercy of whoever finds it.
+
+**Create a free account** — first name, last name, email, optional phone,
+then a six-digit code. No password to invent. A verified account carries
+`demo:read demo:write` and keeps your session history, and the same account
+signs you into the other two demos.
+
+Authentication is handled by a separate service,
+[id.build-with-deepak.com](https://id.build-with-deepak.com). This API does
+not mint tokens — it verifies them against that service's published JWKS, so
+it holds no signing secret and *cannot* issue itself a session. Every
+endpoint except `/health` requires one.
 
 ## Architecture
 
@@ -164,7 +176,7 @@ pnpm --filter web build && pnpm --filter web test
 ## Deploying to the VPS
 
 1. `cp .env.example .env` — set `POSTGRES_PASSWORD`,
-   `MCP_READONLY_PASSWORD` and `JWT_SECRET` (compose refuses to start
+   `MCP_READONLY_PASSWORD` (compose refuses to start
    without them). Confirm `ollama list` on the VPS shows `llama3.1:8b`.
 2. `docker compose up -d --build` — web binds `127.0.0.1:8092` only.
 3. Install `nginx/agent.build-with-deepak.com.conf` into the host nginx,
@@ -178,10 +190,11 @@ pnpm --filter web build && pnpm --filter web test
 - [x] Agent loop with live SSE tool-call timeline, error-recovery
       feedback, step ceiling
 - [x] Two-layer SQL protection (guard + dedicated read-only Postgres role)
-- [x] Demo-account auth end to end; register = honest 501 coming-soon
+- [x] Identity service integration — one account across all three demos,
+      email-OTP registration, shared read-only demo account, `demo:write`
+      scope enforced on every endpoint that stores anything
 - [x] Builds, lints, passes all tests (API: 25 unit + 5 e2e; web: 6)
 - [ ] **Not yet run against live Ollama/Postgres** — this environment had
       neither; the agent loop's Ollama tool-calling path in particular
       needs a real llama3.1 run before this goes in front of anyone
 - [ ] Not yet deployed
-- [ ] Registration/persistent accounts — in progress (demo-first by design)
