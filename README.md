@@ -1,5 +1,7 @@
 # mcp-agent-toolkit
 
+> **Live:** [lab.build-with-deepak.com/labs/agent](https://lab.build-with-deepak.com/labs/agent?utm_source=github&utm_medium=readme) · Built and run by [Deepak Kumar Jha](https://build-with-deepak.com), Technical Lead · Solution Architect, Dubai.
+
 **Live demo:** not deployed yet — planned at `agent.build-with-deepak.com`.
 This repo is complete and locally verified (build, lint, 25 unit tests —
 including a real MCP protocol round-trip — and 5 e2e tests); it has not
